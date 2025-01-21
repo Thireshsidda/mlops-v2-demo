@@ -36,7 +36,7 @@ jobs:
       with:
         resource_group: ${{ needs.get-config.outputs.resource_group }}
         workspace_name: ${{ needs.get-config.outputs.aml_workspace }} 
-        traffic_allocation: taxi-online-dp=100
-        endpoint_name: ${{ format('taxi-gha-{0}', needs.get-config.outputs.oep) }}
+        traffic_allocation: pima-online-dp=100
+        endpoint_name: ${{ format('pima-gha-{0}', needs.get-config.outputs.oep) }}
       secrets:
         creds: ${{secrets.AZURE_CREDENTIALS}}
