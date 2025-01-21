@@ -39,7 +39,7 @@ jobs:
       --test_data ${{outputs.test_data}}
       --enable_monitoring ${{inputs.enable_monitoring}}
       --table_name ${{inputs.table_name}}
-    environment: azureml:taxi-train-env@latest
+    environment: azureml:pima-train-env@latest
     inputs:
       raw_data: ${{parent.inputs.input}}
       enable_monitoring: ${{parent.inputs.enable_monitoring}}
