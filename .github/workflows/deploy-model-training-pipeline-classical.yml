@@ -24,7 +24,7 @@ jobs:
     with:
       resource_group: ${{ needs.get-config.outputs.resource_group }}
       workspace_name: ${{ needs.get-config.outputs.aml_workspace }}
-      name: taxi-data
+      name: pima-diabetes-data
       data_file: mlops/azureml/train/data.yml
     secrets:
       creds: ${{secrets.AZURE_CREDENTIALS}}
