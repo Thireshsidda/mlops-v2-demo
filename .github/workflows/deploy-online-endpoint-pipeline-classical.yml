@@ -25,9 +25,9 @@ jobs:
         resource_group: ${{ needs.get-config.outputs.resource_group }}
         workspace_name: ${{ needs.get-config.outputs.aml_workspace }} 
         endpoint_file: mlops/azureml/deploy/online/online-deployment.yml
-        endpoint_name: ${{ format('taxi-gha-{0}', needs.get-config.outputs.oep) }}
+        endpoint_name: ${{ format('pima-gha-{0}', needs.get-config.outputs.oep) }}
         endpoint_type: online
-        deployment_name: taxi-online-dp
+        deployment_name: pima-online-dp
       secrets:
         creds: ${{secrets.AZURE_CREDENTIALS}}
   allocate-traffic:
