@@ -75,7 +75,7 @@ jobs:
       --evaluation_output ${{outputs.evaluation_output}}
     environment: azureml:pima-train-env@latest
     inputs:
-      model_name: "taxi-model"
+      model_name: "pima_classification_model"
       model_input: ${{parent.jobs.train_model.outputs.model_output}}
       test_data: ${{parent.jobs.prep_data.outputs.test_data}}
     outputs:
@@ -91,9 +91,9 @@ jobs:
       --model_path ${{inputs.model_path}} 
       --evaluation_output ${{inputs.evaluation_output}}
       --model_info_output_path ${{outputs.model_info_output_path}}
-    environment: azureml:taxi-train-env@latest
+    environment: azureml:pima-train-env@latest
     inputs:
-      model_name: "taxi-model"
+      model_name: "pima_classification_model"
       model_path: ${{parent.jobs.train_model.outputs.model_output}}
       evaluation_output: ${{parent.jobs.evaluate_model.outputs.evaluation_output}}
     outputs:
