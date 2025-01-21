@@ -12,42 +12,19 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+from sklearn.metrics import recall_score, confusion_matrix
 
 import mlflow
 import mlflow.sklearn
 import mlflow.pyfunc
 from mlflow.tracking import MlflowClient
 
-TARGET_COL = "cost"
+# Define target column
+TARGET_COL = "class"
 
-NUMERIC_COLS = [
-    "distance",
-    "dropoff_latitude",
-    "dropoff_longitude",
-    "passengers",
-    "pickup_latitude",
-    "pickup_longitude",
-    "pickup_weekday",
-    "pickup_month",
-    "pickup_monthday",
-    "pickup_hour",
-    "pickup_minute",
-    "pickup_second",
-    "dropoff_weekday",
-    "dropoff_month",
-    "dropoff_monthday",
-    "dropoff_hour",
-    "dropoff_minute",
-    "dropoff_second",
-]
-
-CAT_NOM_COLS = [
-    "store_forward",
-    "vendor",
-]
-
-CAT_ORD_COLS = [
+# Define feature columns
+FEATURE_COLS = [
+    "preg", "plas", "pres", "skin", "test", "mass", "pedi", "age"
 ]
 
 def parse_args():
@@ -72,10 +49,10 @@ def main(args):
 
     # Split the data into inputs and outputs
     y_test = test_data[TARGET_COL]
-    X_test = test_data[NUMERIC_COLS + CAT_NOM_COLS + CAT_ORD_COLS]
+    X_test = test_data[FEATURE_COLS]
 
     # Load the model from input port
-    model =  mlflow.sklearn.load_model(args.model_input) 
+    model = mlflow.sklearn.load_model(args.model_input) 
 
     # ---------------- Model Evaluation ---------------- #
     yhat_test, score = model_evaluation(X_test, y_test, model, args.evaluation_output)
@@ -85,49 +62,40 @@ def main(args):
         predictions, deploy_flag = model_promotion(args.model_name, args.evaluation_output, X_test, y_test, yhat_test, score)
 
 
-
 def model_evaluation(X_test, y_test, model, evaluation_output):
 
-    # Get predictions to y_test (y_test)
+    # Get predictions
     yhat_test = model.predict(X_test)
 
-    # Save the output data with feature columns, predicted cost, and actual cost in csv file
+    # Save the output data with feature columns, predicted label, and actual label in csv file
     output_data = X_test.copy()
     output_data["real_label"] = y_test
     output_data["predicted_label"] = yhat_test
     output_data.to_csv((Path(evaluation_output) / "predictions.csv"))
 
-    # Evaluate Model performance with the test set
-    r2 = r2_score(y_test, yhat_test)
-    mse = mean_squared_error(y_test, yhat_test)
-    rmse = np.sqrt(mse)
-    mae = mean_absolute_error(y_test, yhat_test)
-
+    # Evaluate model performance with the test set
+    recall = recall_score(y_test, yhat_test)
+    print(f'Recall score: {recall:.2f}')
+    
     # Print score report to a text file
     (Path(evaluation_output) / "score.txt").write_text(
         f"Scored with the following model:\n{format(model)}"
     )
     with open((Path(evaluation_output) / "score.txt"), "a") as outfile:
-        outfile.write("Mean squared error: {mse.2f} \n")
-        outfile.write("Root mean squared error: {rmse.2f} \n")
-        outfile.write("Mean absolute error: {mae.2f} \n")
-        outfile.write("Coefficient of determination: {r2.2f} \n")
+        outfile.write(f"Recall score: {recall:.2f}\n")
 
-    mlflow.log_metric("test r2", r2)
-    mlflow.log_metric("test mse", mse)
-    mlflow.log_metric("test rmse", rmse)
-    mlflow.log_metric("test mae", mae)
+    mlflow.log_metric("test recall", recall)
 
     # Visualize results
     plt.scatter(y_test, yhat_test,  color='black')
     plt.plot(y_test, y_test, color='blue', linewidth=3)
-    plt.xlabel("Real value")
+    plt.xlabel("Actual value")
     plt.ylabel("Predicted value")
-    plt.title("Comparing Model Predictions to Real values - Test Data")
-    plt.savefig("predictions.png")
-    mlflow.log_artifact("predictions.png")
+    plt.title("Comparing Model Predictions to Actual values - Test Data")
+    plt.savefig("classification_predictions.png")
+    mlflow.log_artifact("classification_predictions.png")
 
-    return yhat_test, r2
+    return yhat_test, recall
 
 def model_promotion(model_name, evaluation_output, X_test, y_test, yhat_test, score):
     
@@ -189,3 +157,43 @@ if __name__ == "__main__":
     main(args)
 
     mlflow.end_run()
+
+
+# # Copyright (c) Microsoft Corporation. All rights reserved.
+# # Licensed under the MIT License.
+# """
+# Evaluates trained ML model using test dataset.
+# Saves predictions, evaluation results and deploy flag.
+# """
+
+# import argparse
+# from pathlib import Path
+
+# import numpy as np
+# import pandas as pd
+# from matplotlib import pyplot as plt
+
+# from sklearn.metrics import recall_score, confusion_matrix
+
+# import mlflow
+# import mlflow.sklearn
+# import mlflow.pyfunc
+# from mlflow.tracking import MlflowClient
+
+# def model_promotion(model_name, evaluation_output, X_test, y_test, yhat_test, score):
+    
+#     scores = {}
+#     predictions = {}
+
+#     client = MlflowClient()
+
+#     for model_run in client.search_model_versions(f"name='{model_name}'"):
+#         model_version = model_run.version
+#         mdl = mlflow.pyfunc.load_model(
+#             model_uri=f"models:/{model_name}/{model_version}")
+#         predictions[f"{model_name}:{model_version}"] = mdl.predict(X_test)
+#         scores[f"{model_name}:{model_version}"] = recall_score(
+#             y_test, predictions[f"{model_name}:{model_version}"])
+
+#     if scores:
+#         if score >= max(list(scores.values
