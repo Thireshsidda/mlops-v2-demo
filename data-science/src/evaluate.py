@@ -98,7 +98,6 @@ def model_evaluation(X_test, y_test, model, evaluation_output):
     return yhat_test, recall
 
 def model_promotion(model_name, evaluation_output, X_test, y_test, yhat_test, score):
-    
     scores = {}
     predictions = {}
 
@@ -109,7 +108,7 @@ def model_promotion(model_name, evaluation_output, X_test, y_test, yhat_test, sc
         mdl = mlflow.pyfunc.load_model(
             model_uri=f"models:/{model_name}/{model_version}")
         predictions[f"{model_name}:{model_version}"] = mdl.predict(X_test)
-        scores[f"{model_name}:{model_version}"] = r2_score(
+        scores[f"{model_name}:{model_version}"] = recall_score(
             y_test, predictions[f"{model_name}:{model_version}"])
 
     if scores:
@@ -124,12 +123,12 @@ def model_promotion(model_name, evaluation_output, X_test, y_test, yhat_test, sc
     with open((Path(evaluation_output) / "deploy_flag"), 'w') as outfile:
         outfile.write(f"{int(deploy_flag)}")
 
-    # add current model score and predictions
+    # Add current model score and predictions
     scores["current model"] = score
-    predictions["currrent model"] = yhat_test
+    predictions["current model"] = yhat_test
 
     perf_comparison_plot = pd.DataFrame(
-        scores, index=["r2 score"]).plot(kind='bar', figsize=(15, 10))
+        scores, index=["recall score"]).plot(kind='bar', figsize=(15, 10))
     perf_comparison_plot.figure.savefig("perf_comparison.png")
     perf_comparison_plot.figure.savefig(Path(evaluation_output) / "perf_comparison.png")
 
@@ -157,43 +156,3 @@ if __name__ == "__main__":
     main(args)
 
     mlflow.end_run()
-
-
-# # Copyright (c) Microsoft Corporation. All rights reserved.
-# # Licensed under the MIT License.
-# """
-# Evaluates trained ML model using test dataset.
-# Saves predictions, evaluation results and deploy flag.
-# """
-
-# import argparse
-# from pathlib import Path
-
-# import numpy as np
-# import pandas as pd
-# from matplotlib import pyplot as plt
-
-# from sklearn.metrics import recall_score, confusion_matrix
-
-# import mlflow
-# import mlflow.sklearn
-# import mlflow.pyfunc
-# from mlflow.tracking import MlflowClient
-
-# def model_promotion(model_name, evaluation_output, X_test, y_test, yhat_test, score):
-    
-#     scores = {}
-#     predictions = {}
-
-#     client = MlflowClient()
-
-#     for model_run in client.search_model_versions(f"name='{model_name}'"):
-#         model_version = model_run.version
-#         mdl = mlflow.pyfunc.load_model(
-#             model_uri=f"models:/{model_name}/{model_version}")
-#         predictions[f"{model_name}:{model_version}"] = mdl.predict(X_test)
-#         scores[f"{model_name}:{model_version}"] = recall_score(
-#             y_test, predictions[f"{model_name}:{model_version}"])
-
-#     if scores:
-#         if score >= max(list(scores.values
