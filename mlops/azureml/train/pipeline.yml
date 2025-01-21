@@ -73,7 +73,7 @@ jobs:
       --model_input ${{inputs.model_input}} 
       --test_data ${{inputs.test_data}} 
       --evaluation_output ${{outputs.evaluation_output}}
-    environment: azureml:taxi-train-env@latest
+    environment: azureml:pima-train-env@latest
     inputs:
       model_name: "taxi-model"
       model_input: ${{parent.jobs.train_model.outputs.model_output}}
