@@ -57,7 +57,7 @@ jobs:
       python train.py 
       --train_data ${{inputs.train_data}} 
       --model_output ${{outputs.model_output}}
-    environment: azureml:taxi-train-env@latest
+    environment: azureml:pima-train-env@latest
     inputs:
       train_data: ${{parent.jobs.prep_data.outputs.train_data}}
     outputs:
