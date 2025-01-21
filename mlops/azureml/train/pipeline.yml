@@ -1,15 +1,15 @@
 $schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
 type: pipeline
-experiment_name: taxi-fare-training
-description: Training Pipeline to train a model that predicts taxi fare price
+experiment_name: pima-classification-training
+description: Training Pipeline to predict diabetes using Decision Tree classifie
 
 # <inputs_and_outputs>
 inputs:
   input:
     type: uri_file
-    path: azureml:taxi-data@latest
+    path: azureml:pima-diabetes-data@latest
   enable_monitoring: 'false'
-  table_name: 'taximonitoring'
+  table_name: 'pima_monitoring'
 
 outputs: 
   train_data:
