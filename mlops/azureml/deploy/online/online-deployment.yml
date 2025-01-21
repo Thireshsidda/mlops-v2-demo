@@ -1,6 +1,6 @@
 $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
 name: blue
-endpoint_name: taxi-fare-online
-model: azureml:taxi-model@latest
-instance_type: Standard_DS2_v2
+endpoint_name: pima-classification-online
+model: azureml:pima_classification_model@latest
+instance_type: Standard_F4s_v2
 instance_count: 1
