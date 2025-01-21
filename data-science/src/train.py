@@ -5,50 +5,22 @@ Trains ML model using training dataset. Saves trained model.
 """
 
 import argparse
-
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
-
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import recall_score, confusion_matrix
 import mlflow
 import mlflow.sklearn
+from matplotlib import pyplot as plt
 
-TARGET_COL = "cost"
+# Define target column
+TARGET_COL = "class"
 
-NUMERIC_COLS = [
-    "distance",
-    "dropoff_latitude",
-    "dropoff_longitude",
-    "passengers",
-    "pickup_latitude",
-    "pickup_longitude",
-    "pickup_weekday",
-    "pickup_month",
-    "pickup_monthday",
-    "pickup_hour",
-    "pickup_minute",
-    "pickup_second",
-    "dropoff_weekday",
-    "dropoff_month",
-    "dropoff_monthday",
-    "dropoff_hour",
-    "dropoff_minute",
-    "dropoff_second",
+# Define feature columns
+FEATURE_COLS = [
+    "preg", "plas", "pres", "skin", "test", "mass", "pedi", "age"
 ]
-
-CAT_NOM_COLS = [
-    "store_forward",
-    "vendor",
-]
-
-CAT_ORD_COLS = [
-]
-
 
 def parse_args():
     '''Parse input arguments'''
@@ -56,20 +28,10 @@ def parse_args():
     parser = argparse.ArgumentParser("train")
     parser.add_argument("--train_data", type=str, help="Path to train dataset")
     parser.add_argument("--model_output", type=str, help="Path of output model")
-
-    # classifier specific arguments
-    parser.add_argument('--regressor__n_estimators', type=int, default=500,
-                        help='Number of trees')
-    parser.add_argument('--regressor__bootstrap', type=int, default=1,
-                        help='Method of selecting samples for training each tree')
-    parser.add_argument('--regressor__max_depth', type=int, default=10,
-                        help=' Maximum number of levels in tree')
-    parser.add_argument('--regressor__max_features', type=str, default='auto',
-                        help='Number of features to consider at every split')
-    parser.add_argument('--regressor__min_samples_leaf', type=int, default=4,
-                        help='Minimum number of samples required at each leaf node')
-    parser.add_argument('--regressor__min_samples_split', type=int, default=5,
-                        help='Minimum number of samples required to split a node')
+    parser.add_argument('--criterion', type=str, default='gini',
+                        help='The function to measure the quality of a split')
+    parser.add_argument('--max_depth', type=int, default=None,
+                        help='The maximum depth of the tree. If None, then nodes are expanded until all the leaves contain less than min_samples_split samples.')
 
     args = parser.parse_args()
 
@@ -83,74 +45,52 @@ def main(args):
 
     # Split the data into input(X) and output(y)
     y_train = train_data[TARGET_COL]
-    X_train = train_data[NUMERIC_COLS + CAT_NOM_COLS + CAT_ORD_COLS]
+    X_train = train_data[FEATURE_COLS]
 
-    # Train a Random Forest Regression Model with the training set
-    model = RandomForestRegressor(n_estimators = args.regressor__n_estimators,
-                                  bootstrap = args.regressor__bootstrap,
-                                  max_depth = args.regressor__max_depth,
-                                  max_features = args.regressor__max_features,
-                                  min_samples_leaf = args.regressor__min_samples_leaf,
-                                  min_samples_split = args.regressor__min_samples_split,
-                                  random_state=0)
-
-    # log model hyperparameters
-    mlflow.log_param("model", "RandomForestRegressor")
-    mlflow.log_param("n_estimators", args.regressor__n_estimators)
-    mlflow.log_param("bootstrap", args.regressor__bootstrap)
-    mlflow.log_param("max_depth", args.regressor__max_depth)
-    mlflow.log_param("max_features", args.regressor__max_features)
-    mlflow.log_param("min_samples_leaf", args.regressor__min_samples_leaf)
-    mlflow.log_param("min_samples_split", args.regressor__min_samples_split)
-
-    # Train model with the train set
+    # Initialize and train a Decision Tree Classifier
+    model = DecisionTreeClassifier(criterion=args.criterion, max_depth=args.max_depth)
     model.fit(X_train, y_train)
 
-    # Predict using the Regression Model
+    # Log model hyperparameters
+    mlflow.log_param("model", "DecisionTreeClassifier")
+    mlflow.log_param("criterion", args.criterion)
+    mlflow.log_param("max_depth", args.max_depth)
+
+    # Predict using the Decision Tree Model
     yhat_train = model.predict(X_train)
 
-    # Evaluate Regression performance with the train set
-    r2 = r2_score(y_train, yhat_train)
-    mse = mean_squared_error(y_train, yhat_train)
-    rmse = np.sqrt(mse)
-    mae = mean_absolute_error(y_train, yhat_train)
-    
-    # log model performance metrics
-    mlflow.log_metric("train r2", r2)
-    mlflow.log_metric("train mse", mse)
-    mlflow.log_metric("train rmse", rmse)
-    mlflow.log_metric("train mae", mae)
+    # Compute and log recall score
+    recall = recall_score(y_train, yhat_train)
+    print('Recall of Decision Tree classifier on training set: {:.2f}'.format(recall))
+    mlflow.log_metric("Recall", float(recall))
+
+    # Create and display a confusion matrix
+    cm = confusion_matrix(y_train, yhat_train)
+    print(cm)
 
     # Visualize results
-    plt.scatter(y_train, yhat_train,  color='black')
+    plt.scatter(y_train, yhat_train, color='black')
     plt.plot(y_train, y_train, color='blue', linewidth=3)
-    plt.xlabel("Real value")
+    plt.xlabel("Actual value")
     plt.ylabel("Predicted value")
-    plt.savefig("regression_results.png")
-    mlflow.log_artifact("regression_results.png")
-
+    plt.savefig("classification_results.png")
+    mlflow.log_artifact("classification_results.png")
+    
     # Save the model
     mlflow.sklearn.save_model(sk_model=model, path=args.model_output)
-
 
 if __name__ == "__main__":
     
     mlflow.start_run()
 
-    # ---------- Parse Arguments ----------- #
-    # -------------------------------------- #
-
+    # Parse Arguments
     args = parse_args()
 
     lines = [
         f"Train dataset input path: {args.train_data}",
         f"Model output path: {args.model_output}",
-        f"n_estimators: {args.regressor__n_estimators}",
-        f"bootstrap: {args.regressor__bootstrap}",
-        f"max_depth: {args.regressor__max_depth}",
-        f"max_features: {args.regressor__max_features}",
-        f"min_samples_leaf: {args.regressor__min_samples_leaf}",
-        f"min_samples_split: {args.regressor__min_samples_split}"
+        f"Criterion: {args.criterion}",
+        f"Max Depth: {args.max_depth}"
     ]
 
     for line in lines:
@@ -159,4 +99,3 @@ if __name__ == "__main__":
     main(args)
 
     mlflow.end_run()
-    
