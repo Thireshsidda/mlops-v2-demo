@@ -1,5 +1,6 @@
 $schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
 type: pipeline
+display_name: decision_tree_training_pipeline
 experiment_name: pima-classification-training
 description: Training Pipeline to predict diabetes using Decision Tree classifier
 
