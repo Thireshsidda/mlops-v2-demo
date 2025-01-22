@@ -1,4 +1,4 @@
 $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
-name: pima-classification-online
+name: pima-online-endpoint
 description: An online endpoint serving the registered model for the Pima classification task
 auth_mode: key
